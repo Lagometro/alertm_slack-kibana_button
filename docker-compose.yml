@@ -1,0 +1,60 @@
+version: '3.3'
+
+networks:
+  prometheus:
+
+services:
+  prometheus:
+      image: prom/prometheus
+      container_name: prometheus
+      ports:
+        - '9090:9090'
+      networks:
+        - prometheus
+      volumes:
+        - .:/etc/prometheus/
+      command:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--storage.tsdb.path=/prometheus"
+      restart: always 
+
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - ./config_alerts:/etc/alertmanager
+    networks:
+      - prometheus
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+      - '--log.level=debug'
+  
+  node-exporter:
+    container_name: node-exporter
+    image: prom/node-exporter
+    networks:
+      - prometheus
+    volumes:
+      - ./textrules:/etc/node-exporter
+      - /etc/hostname:/etc/nodename:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/TZ:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.textfile.directory=/etc/node-exporter'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--no-collector.ipvs'
+    ports:
+      - 9100:9100
+    restart: always
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure

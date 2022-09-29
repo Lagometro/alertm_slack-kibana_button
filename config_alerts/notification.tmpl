@@ -1,0 +1,32 @@
+{{ define "slack.buttons.runbook" -}}
+https://gitlab.com/uneeq-oss/cert-manager-mixin/-/blob/master/RUNBOOK.md#{{ .CommonLabels.alertname | toLower }}
+{{- end }}
+{{ define "slack.buttons.query" -}}
+{{ (index .Alerts 0).GeneratorURL }}
+{{- end }}
+{{ define "slack.buttons.dashboard" -}}
+https://graf.ddkit.io/?orgId=1&search=open&tag={{ .CommonLabels.alertname }}
+{{- end }}
+
+
+{{ define "log.filters" -}}
+{{ $filter := "" -}}
+{{ $logindex := "" -}}
+{{ if (match "cet" .ExternalURL) }}{{ $logindex = "cf0565a0-35ba-11ed-a964-f548c19c9309" }}{{ else }}{{ $logindex = "25cc40d0-2def-11ed-bf5b-eb35256b5268" }}{{ end -}}
+{{ if .CommonLabels.deployment -}}
+{{ $deployment := printf "('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'%s',key:kubernetes_labels_app_kubernetes_io/name,negate:!f,params:(query:%s),type:phrase),query:(match_phrase:(kubernetes_labels_app_kubernetes_io/name:%s)))," $logindex .CommonLabels.deployment .CommonLabels.deployment -}}
+{{ $filter = printf "%s" $deployment -}}{{ end -}}
+{{ if .CommonLabels.pod -}}
+{{ $pod := printf "('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'%s',key:kubernetes_pod_name,negate:!f,params:(query:'%s'),type:phrase),query:(match_phrase:(kubernetes_pod_name:'%s')))," $logindex .CommonLabels.pod .CommonLabels.pod -}}
+{{ $filter = printf "%s%s" $filter $pod -}}{{ end -}}
+{{ if .CommonLabels.component -}}
+{{ $component := printf "('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'%s',key:kubernetes_labels_app_kubernetes_io/component,negate:!f,params:(query:%s),type:phrase),query:(match_phrase:(kubernetes_labels_app_kubernetes_io/component:%s)))," $logindex .CommonLabels.component .CommonLabels.component -}}
+{{ $filter = printf "%s%s" $filter $component -}}{{ end -}}
+{{ if .CommonLabels.namespace -}}
+{{ $namespace := printf "('$state':(store:appState),meta:(alias:!n,disabled:!f,index:'%s',key:kubernetes_namespace_name,negate:!f,params:(query:%s),type:phrase),query:(match_phrase:(kubernetes_namespace_name:%s)))),index:'%s',interval:auto,query:(language:kuery,query:''),sort:!())" $logindex .CommonLabels.namespace .CommonLabels.namespace $logindex -}}
+{{ $filter = printf "%s%s" $filter $namespace -}}{{ end -}}
+{{ printf "%s" $filter -}}{{ end -}}
+{{ define "slack.buttons.logs" -}}
+{{ printf "https://logs.ddkit.io/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(_source),filters:!("}}{{ template "log.filters" . }}
+{{- end }}
+
