@@ -1,6 +1,6 @@
 global:
   resolve_timeout: 2s
-  slack_api_url: 'slack_chat_url'
+  slack_api_url: ''
 route:
   receiver: 'slack-notifications'
   repeat_interval: 10s
@@ -26,3 +26,29 @@ receivers:
       url: '{{ template "slack.buttons.logs" . }}'
 templates:
 - /etc/alertmanager/*.tmpl
+#TELEGRAM
+#global:
+#  resolve_timeout: 1s
+#receivers:
+#- name: default-telegram
+#  telegram_configs:
+#  - api_url: https://api.telegram.org
+#    bot_token: "2020614219:AAGY7TFbj2YkdQ5x7SySzcYb9tALWd0Ci80"
+#    chat_id: 378250546
+#    disable_notifications: false
+#    http_config:
+#      follow_redirects: true
+#    send_resolved: true
+#    parse_mode: ""
+#route:
+#  continue: false
+#  group_by:
+#  - job
+#  group_interval: 1s
+#  group_wait: 1s
+#  receiver: default-telegram
+#  repeat_interval: 1s
+#  routes:
+#  - receiver: default-telegram
+#templates:
+#- /etc/alertmanager/*.tmpl
